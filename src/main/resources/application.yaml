@@ -1,13 +1,14 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/parksmart
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    username: "selmakaracic"
+    password: ""
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
 
 server:
-  port: 8080
+  port: ${PORT:8080}
