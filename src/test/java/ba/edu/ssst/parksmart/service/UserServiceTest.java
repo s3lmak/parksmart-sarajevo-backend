@@ -1,4 +1,5 @@
 package ba.edu.ssst.parksmart.service;
+// Unit tests for UserService - homework-5
 
 import ba.edu.ssst.parksmart.model.User;
 import ba.edu.ssst.parksmart.repository.UserRepository;
