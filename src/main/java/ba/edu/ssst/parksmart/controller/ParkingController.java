@@ -17,8 +17,8 @@ public class ParkingController {
     }
 
     @GetMapping
-    public List<Parking> getAllParkings(){
-        return parkingService.getAllParkings();
+    public ResponseEntity<List<Parking>> getAllParkings() {
+        return ResponseEntity.ok(parkingService.getParkingsWithLiveAvailability());
     }
 
     @GetMapping("/{id}")

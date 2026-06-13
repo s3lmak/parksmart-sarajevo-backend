@@ -10,6 +10,9 @@ import java.util.Optional;
 public class ParkingService {
 
 private final ParkingRepository parkingRepository;
+private final org.springframework.web.client.RestClient restClient =
+        org.springframework.web.client.RestClient.create();
+
 
 public ParkingService(ParkingRepository parkingRepository){
     this.parkingRepository = parkingRepository;
@@ -47,5 +50,38 @@ public void deleteParking(Long id){
 public List<Parking> getParkingsByMaxPrice(Double maxPrice) {
     return parkingRepository.findByPricePerHourLessThanEqual(maxPrice);
 }
+
+    public List<Parking> getParkingsWithLiveAvailability() {
+        List<Parking> parkings = parkingRepository.findAll();
+
+        try {
+            //String url = "https://parksmart-availability-36a105e3f6fc.herokuapp.com/api/availability/all";
+            String url = "http://localhost:8082/api/availability/all";
+            List<java.util.Map<String, Object>> availabilityData = restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .body(new org.springframework.core.ParameterizedTypeReference<>() {});
+
+            if (availabilityData != null) {
+                for (java.util.Map<String, Object> data : availabilityData) {
+                    Long parkingId = ((Number) data.get("parkingId")).longValue();
+                    int availableSpots = ((Number) data.get("availableSpots")).intValue();
+                    String status = (String) data.get("status");
+
+                    parkings.stream()
+                            .filter(p -> p.getId().equals(parkingId))
+                            .findFirst()
+                            .ifPresent(p -> {
+                                p.setAvailableSpots(availableSpots);
+                                p.setStatus(status);
+                            });
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+
+        return parkings;
+    }
 
 }
