@@ -2,6 +2,7 @@ package ba.edu.ssst.parksmart.service;
 import ba.edu.ssst.parksmart.model.Parking;
 import ba.edu.ssst.parksmart.repository.ParkingRepository;
 import org.springframework.stereotype.Service;
+import java.util.Map;
 
 import java.util.List;
 import java.util.Optional;
@@ -55,10 +56,22 @@ public List<Parking> getParkingsByMaxPrice(Double maxPrice) {
         List<Parking> parkings = parkingRepository.findAll();
 
         try {
-            //String url = "https://parksmart-availability-36a105e3f6fc.herokuapp.com/api/availability/all";
-            String url = "http://localhost:8082/api/availability/all";
-            List<java.util.Map<String, Object>> availabilityData = restClient.get()
+            String url = System.getenv().getOrDefault("AVAILABILITY_SERVICE_URL",
+                    "https://parksmart-availability-36a105e3f6fc.herokuapp.com/api/availability") + "/batch";
+
+            List<Map<String, Object>> requestBody = parkings.stream()
+                    .map(p -> {
+                        Map<String, Object> map = new java.util.HashMap<>();
+                        map.put("id", p.getId());
+                        map.put("totalCapacity", p.getTotalCapacity());
+                        return map;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+
+            List<java.util.Map<String, Object>> availabilityData = restClient.post()
                     .uri(url)
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .body(requestBody)
                     .retrieve()
                     .body(new org.springframework.core.ParameterizedTypeReference<>() {});
 
@@ -78,7 +91,7 @@ public List<Parking> getParkingsByMaxPrice(Double maxPrice) {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
+            System.out.println("Availability service error: " + e.getMessage());
         }
 
         return parkings;
