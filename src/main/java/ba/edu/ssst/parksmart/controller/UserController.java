@@ -34,4 +34,20 @@ public class UserController {
     public ResponseEntity<User> createUser(@RequestBody User user) {
         return ResponseEntity.ok(userService.createUser(user));
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody java.util.Map<String, String> body) {
+        String email = body.get("email");
+        String password = body.get("password");
+
+        return userService.findByEmail(email)
+                .map(user -> {
+                    if (userService.checkPassword(password, user.getPassword())) {
+                        return ResponseEntity.ok(user);
+                    } else {
+                        return ResponseEntity.status(401).body((Object)"Invalid credentials");
+                    }
+                })
+                .orElse(ResponseEntity.status(401).body("User not found"));
+    }
 }
