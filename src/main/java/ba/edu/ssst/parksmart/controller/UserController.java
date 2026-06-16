@@ -1,8 +1,10 @@
 package ba.edu.ssst.parksmart.controller;
 
 import ba.edu.ssst.parksmart.model.User;
+import ba.edu.ssst.parksmart.repository.UserRepository;
 import ba.edu.ssst.parksmart.service.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,9 +15,12 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, UserRepository userRepository) {
         this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -49,5 +54,24 @@ public class UserController {
                     }
                 })
                 .orElse(ResponseEntity.status(401).body("User not found"));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+        return userService.getUserById(id)
+                .map(user -> {
+                    if (body.containsKey("fullName")) {
+                        user.setFullName(body.get("fullName"));
+                    }
+                    if (body.containsKey("password") && !body.get("password").isEmpty()) {
+                        String currentPassword = body.get("currentPassword");
+                        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                            return ResponseEntity.status(401).body((Object)"Current password is incorrect");
+                        }
+                        user.setPassword(passwordEncoder.encode(body.get("password")));
+                    }
+                    return ResponseEntity.ok((Object)userRepository.save(user));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }
