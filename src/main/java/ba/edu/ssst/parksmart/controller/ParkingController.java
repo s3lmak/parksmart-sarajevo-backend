@@ -22,8 +22,11 @@ public class ParkingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Parking> getParkingById(@PathVariable Long id){
-        return parkingService.getParkingById(id)
+    public ResponseEntity<Parking> getParkingById(@PathVariable Long id) {
+        return parkingService.getParkingsWithLiveAvailability()
+                .stream()
+                .filter(p -> p.getId().equals(id))
+                .findFirst()
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
